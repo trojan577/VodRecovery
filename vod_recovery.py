@@ -394,7 +394,7 @@ def get_latest_streams_from_twitchtracker():
                 rows_to_display = streams[start_idx:end_idx]
                 
                 print(f"\nLatest streams for {streamer_name}:")
-                print("\n#   Date                Duration    Title")
+                print("\n#   Date                 Games                          Duration   Title")
                 print("-" * 80)
                 
                 stream_info = []
@@ -413,10 +413,15 @@ def get_latest_streams_from_twitchtracker():
                             title = title[:72] + "..."
 
                         video_id = row['stream_id']
+                        games_str = ", ".join(row['game_names'])
+                        if len(games_str) > 30:
+                            games_str = games_str[:27] + "..."
+                        games_str = games_str.ljust(30)
+
                         stream_info.append((video_id, date_str, date_utc, title))
                         valid_streams.append(idx)
 
-                        print(f"{idx_str} {date_str} {duration_str} {title}")
+                        print(f"{idx_str} {date_str} {games_str} {duration_str} {title}")
                     except Exception as e:
                         print(f"\n✖  Error processing stream {idx}: {str(e)}")
                         continue
@@ -1430,14 +1435,21 @@ def selenium_get_latest_streams_from_twitchtracker(url):
                         print(f"Error: date key {dt_utc} for stream {title} not found in complicators object")
                         continue
 
+                    # Get the stream id and list of games/categories
                     assist = compl[dt_utc]
                     stream_id = assist['id']
+                    game_names = []
+                    for game in assist['games']:
+                        if not game['name'] in game_names:
+                            game_names.append(game['name'])
+
                     stream = {
                         'dt_utc': dt_utc,
                         'dt_local': dt_local,
                         'title': title,
                         'duration': duration,
                         'stream_id': stream_id,
+                        'game_names': game_names
                     }
 
                     streams.append(stream)
