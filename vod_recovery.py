@@ -368,6 +368,8 @@ def get_latest_streams_from_twitchtracker():
     url = f"https://twitchtracker.com/{streamer_name}/streams"
     
     current_page = 1
+    # Show 10 vods per page
+    rows_per_page = 10
     
     max_retries = 3
     for attempt in range(max_retries):
@@ -383,14 +385,12 @@ def get_latest_streams_from_twitchtracker():
                     print("Unable to get streams from TwitchTracker!")
                     return
 
-            # Show 10 vods per page
-            rows_per_page = 10
             total_rows = len(streams)
             total_pages = (total_rows + rows_per_page - 1) // rows_per_page
             
             def display_streams(page_num):
-                start_idx = (page_num - 1) * 10
-                end_idx = min(start_idx + 10, total_rows)
+                start_idx = (page_num - 1) * rows_per_page
+                end_idx = min(start_idx + rows_per_page, total_rows)
                 rows_to_display = streams[start_idx:end_idx]
                 
                 print(f"\nLatest streams for {streamer_name}:")
@@ -450,7 +450,7 @@ def get_latest_streams_from_twitchtracker():
         print("1. Recover specific stream")
         print("2. Recover all streams")
         if current_page < total_pages:
-            print("3. Show next 10 streams")
+            print(f"3. Show next {rows_per_page} streams")
             print("4. Return")
         else:
             print("3. Return")
@@ -492,7 +492,7 @@ def get_latest_streams_from_twitchtracker():
             break
         elif choice == "3":
             if current_page < total_pages:
-                # Show next 10 streams
+                # Show next streams on next page
                 current_page += 1
                 stream_info, valid_streams = display_streams(current_page)
             else:
