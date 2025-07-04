@@ -389,8 +389,8 @@ def get_latest_streams_from_twitchtracker():
             total_pages = (total_rows + rows_per_page - 1) // rows_per_page
             
             def display_streams(page_num):
-                start_idx = (page_num - 1) * 10
-                end_idx = min(start_idx + 10, total_rows)
+                start_idx = (page_num - 1) * rows_per_page
+                end_idx = min(start_idx + rows_per_page, total_rows)
                 rows_to_display = streams[start_idx:end_idx]
                 print(f"\nLatest streams for {streamer_name}:")
                 print("\n#   Date                Duration    Title")
