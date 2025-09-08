@@ -33,6 +33,15 @@ CURRENT_VERSION = "1.3.18"
 SUPPORTED_FORMATS = [".mp4", ".mkv", ".mov", ".avi", ".ts"]
 RESOLUTIONS = ["chunked", "1440p60", "1440p30", "1080p60", "1080p30", "720p60", "720p30", "480p60", "480p30", "360p60", "360p30", "160p60", "160p30"]
 
+ROWS_PER_PAGE = 10
+CURRENT_STREAMS = None
+CURRENT_STREAMER = None
+CURRENT_PAGE_NUM = None
+CURRENT_TOTAL_PAGES = None
+CURRENT_URL = None
+CURRENT_VALID_STREAMS = []
+CURRENT_STREAM_INFO = None
+
 if sys.platform == 'win32':
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
@@ -363,7 +372,31 @@ def get_latest_version(retries=3):
                 return None
 
 
+def reset_current_streams():
+    global CURRENT_STREAMER
+    global CURRENT_STREAMS
+    global CURRENT_PAGE_NUM
+    global CURRENT_TOTAL_PAGES
+    global CURRENT_URL
+    global CURRENT_VALID_STREAMS
+    global CURRENT_STREAM_INFO
+    CURRENT_STREAMER = None
+    CURRENT_STREAMS = None
+    CURRENT_PAGE_NUM = None
+    CURRENT_TOTAL_PAGES = None
+    CURRENT_URL = None
+    CURRENT_VALID_STREAMS = []
+    CURRENT_STREAM_INFO = None
+
+
 def get_latest_streams_from_twitchtracker():
+    global CURRENT_STREAMER
+    global CURRENT_STREAMS
+    global CURRENT_PAGE_NUM
+    global CURRENT_TOTAL_PAGES
+    global CURRENT_URL
+    global CURRENT_VALID_STREAMS
+    global CURRENT_STREAM_INFO
     streamer_name = input("\nEnter streamer name: ").strip().lower()
     url = f"https://twitchtracker.com/{streamer_name}/streams"
 
@@ -384,39 +417,17 @@ def get_latest_streams_from_twitchtracker():
                     return
 
             # Show 10 vods per page
-            rows_per_page = 10
             total_rows = len(streams)
-            total_pages = (total_rows + rows_per_page - 1) // rows_per_page
-            
-            def display_streams(page_num):
-                start_idx = (page_num - 1) * rows_per_page
-                end_idx = min(start_idx + rows_per_page, total_rows)
-                rows_to_display = streams[start_idx:end_idx]
-                print(f"\nLatest streams for {streamer_name}:")
-                print("\n#   Date                Duration    Title")
-                print("-" * 80)
-                stream_info = []
-                valid_streams = []
-                for idx, row in enumerate(rows_to_display, start_idx + 1):
-                    try:
-                        date_utc = row['dt_utc']
-                        idx_str = str(idx).ljust(3)
-                        date_str = row['dt_local'].ljust(20)
-                        duration_str = (str(round(row['duration'], 1)) + " hrs").ljust(10)
-                        title = row['title']
-                        if len(title) > 75:
-                            title = title[:72] + "..."
-                        video_id = row['stream_id']
-                        stream_info.append((video_id, date_str, date_utc, title))
-                        valid_streams.append(idx)
-                        print(f"{idx_str} {date_str} {duration_str} {title}")
-                    except Exception as e:
-                        print(f"\n✖  Error processing stream {idx}: {str(e)}")
-                        continue
-                return stream_info, valid_streams
-            
-            stream_info, valid_streams = display_streams(current_page)
-            if not stream_info:
+            total_pages = (total_rows + ROWS_PER_PAGE - 1) // ROWS_PER_PAGE
+            CURRENT_TOTAL_PAGES = total_pages
+            CURRENT_STREAMS = streams
+            CURRENT_PAGE_NUM = current_page
+            CURRENT_STREAMER = streamer_name
+            CURRENT_URL = url
+            stream_info, valid_streams = display_streams(streams, current_page, streamer_name)
+            CURRENT_VALID_STREAMS = valid_streams
+            CURRENT_STREAM_INFO = stream_info
+            if not CURRENT_STREAM_INFO:
                 print("\n✖  No valid streams found!")
                 if attempt < max_retries - 1:
                     print("Retrying...")
@@ -432,12 +443,54 @@ def get_latest_streams_from_twitchtracker():
                 continue
             else:
                 print("Max retries reached!")
+                reset_current_streams()
                 return
+    if CURRENT_URL:
+        handle_current_stream_menu()
+
+
+def display_streams(streams, page_num, streamer_name=''):
+    total_rows = len(streams)
+    start_idx = (page_num - 1) * ROWS_PER_PAGE
+    end_idx = min(start_idx + ROWS_PER_PAGE, total_rows)
+    rows_to_display = streams[start_idx:end_idx]
+    print(f"\nLatest streams for {streamer_name}:")
+    print("\n#   Date                Duration    Title")
+    print("-" * 80)
+    stream_info = []
+    valid_streams = []
+    for idx, row in enumerate(rows_to_display, start_idx + 1):
+        try:
+            date_utc = row['dt_utc']
+            idx_str = str(idx).ljust(3)
+            date_str = row['dt_local'].ljust(20)
+            duration_str = (str(round(row['duration'], 1)) + " hrs").ljust(10)
+            title = row['title']
+            if len(title) > 75:
+                title = title[:72] + "..."
+            video_id = row['stream_id']
+            stream_info.append((video_id, date_str, date_utc, title))
+            valid_streams.append(idx)
+            print(f"{idx_str} {date_str} {duration_str} {title}")
+        except Exception as e:
+            print(f"\n✖  Error processing stream {idx}: {str(e)}")
+            continue
+    return stream_info, valid_streams
+
+
+def handle_current_stream_menu():
+    global CURRENT_TOTAL_PAGES
+    global CURRENT_PAGE_NUM
+    global CURRENT_STREAMER
+    global CURRENT_URL
+    global CURRENT_VALID_STREAMS
+    global CURRENT_STREAM_INFO
+
     while True:
         print("\nOptions:")
         print("1. Recover specific stream")
         print("2. Recover all streams")
-        if current_page < total_pages:
+        if CURRENT_PAGE_NUM < CURRENT_TOTAL_PAGES:
             print("3. Show next 10 streams")
             print("4. Return")
         else:
@@ -447,11 +500,11 @@ def get_latest_streams_from_twitchtracker():
             try:
                 stream_num = int(input("\nEnter the number of the stream: "))
                 try:
-                    list_index = valid_streams.index(stream_num)
-                    video_id, date_str, date_utc, title = stream_info[list_index]
-                    print(f"\nRecovering VOD: {date_str.strip()} - {title}") 
+                    list_index = CURRENT_VALID_STREAMS.index(stream_num)
+                    video_id, date_str, date_utc, title = CURRENT_STREAM_INFO[list_index]
+                    print(f"\nRecovering VOD: {date_str.strip()} - {title}")
                     timestamp = datetime.strptime(date_utc, "%Y-%m-%d %H:%M").strftime("%Y-%m-%d %H:%M:%S")  # Use UTC for recovery
-                    m3u8_source = vod_recover(streamer_name, video_id, timestamp, url)
+                    m3u8_source = vod_recover(CURRENT_STREAMER, video_id, timestamp, CURRENT_URL)
                     if m3u8_source:
                         handle_download_menu(m3u8_source, title=title, stream_datetime=timestamp)
                     else:
@@ -465,10 +518,10 @@ def get_latest_streams_from_twitchtracker():
             break
         elif choice == "2":
             print("\nRecovering all streams...")
-            for video_id, date_str, date_utc, title in stream_info:
+            for video_id, date_str, date_utc, title in CURRENT_STREAM_INFO:
                 print(f"\nRecovering Video: {date_str} - {title}")  # Show local time
                 timestamp = datetime.strptime(date_utc, "%Y-%m-%d %H:%M").strftime("%Y-%m-%d %H:%M:%S")  # Use UTC for recovery
-                m3u8_source = vod_recover(streamer_name, video_id, timestamp, url)
+                m3u8_source = vod_recover(CURRENT_STREAMER, video_id, timestamp, CURRENT_URL)
                 if m3u8_source:
                     print(f"\nRecovering VOD {video_id}...")
                     handle_vod_url_normal(m3u8_source, title=title, stream_date=timestamp)
@@ -476,12 +529,15 @@ def get_latest_streams_from_twitchtracker():
                     print(f"\n✖  Could not recover VOD {video_id}!")
             break
         elif choice == "3":
-            if current_page < total_pages:
-                current_page += 1
-                stream_info, valid_streams = display_streams(current_page)
+            if CURRENT_PAGE_NUM < CURRENT_TOTAL_PAGES:
+                CURRENT_PAGE_NUM += 1
+                stream_info, valid_streams = display_streams(CURRENT_STREAMS, CURRENT_PAGE_NUM, CURRENT_STREAMER)
+                CURRENT_STREAM_INFO = stream_info
+                CURRENT_VALID_STREAMS = valid_streams
             else:
                 break
-        elif choice == "4" and current_page == 1:
+        elif choice == "4" and CURRENT_PAGE_NUM == 1 or choice == "4":
+            reset_current_streams()
             break
         else:
             print("\nInvalid option. Please try again.")
@@ -3200,6 +3256,18 @@ def handle_twitch_clip(clip_url):
 
 
 def run_vod_recover():
+    global CURRENT_STREAMER
+    global CURRENT_STREAMS
+    global CURRENT_PAGE_NUM
+    global CURRENT_TOTAL_PAGES
+    global CURRENT_URL
+
+    # print(f"cur streas={len(CURRENT_STREAMS) if CURRENT_STREAMS is not None else 0}, cur streamer={CURRENT_STREAMER}, current page={CURRENT_PAGE_NUM}, cur total={CURRENT_TOTAL_PAGES}, current url={CURRENT_URL}")
+    if CURRENT_STREAMS is not None and CURRENT_STREAMER is not None and CURRENT_PAGE_NUM is not None:
+        display_streams(CURRENT_STREAMS, CURRENT_PAGE_NUM, CURRENT_STREAMER)
+        handle_current_stream_menu()
+        return
+
     print("\nWELCOME TO VOD RECOVERY!")
 
     menu = 0
