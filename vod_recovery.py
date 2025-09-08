@@ -34,7 +34,7 @@ SUPPORTED_FORMATS = [".mp4", ".mkv", ".mov", ".avi", ".ts"]
 RESOLUTIONS = ["chunked", "1440p60", "1440p30", "1080p60", "1080p30", "720p60", "720p30", "480p60", "480p30", "360p60", "360p30", "160p60", "160p30"]
 
 if sys.platform == 'win32':
-	asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
 
 def read_config_by_key(config_file, key):
@@ -95,11 +95,11 @@ def get_default_downloader():
         return "ffmpeg"
     except Exception:
         return "ffmpeg"
-    
+
 
 def get_yt_dlp_custom_options():
     try:
-        custom_options = read_config_by_key("settings", "YT_DLP_OPTIONS") 
+        custom_options = read_config_by_key("settings", "YT_DLP_OPTIONS")
         if custom_options:
             return custom_options.split()
         return []
@@ -356,9 +356,9 @@ def get_latest_version(retries=3):
             else:
                 return None
         except Exception:
-            if attempt < retries - 1: 
-                sleep(3)  
-                continue 
+            if attempt < retries - 1:
+                sleep(3)
+                continue
             else:
                 return None
 
@@ -366,9 +366,9 @@ def get_latest_version(retries=3):
 def get_latest_streams_from_twitchtracker():
     streamer_name = input("\nEnter streamer name: ").strip().lower()
     url = f"https://twitchtracker.com/{streamer_name}/streams"
-    
+
     current_page = 1
-    
+
     max_retries = 3
     for attempt in range(max_retries):
         try:
@@ -543,7 +543,7 @@ def sanitize_filename(filename, restricted=False):
     if restricted and result.startswith("-_"):
         result = result[2:]
     if result.startswith("-"):
-        result = "_" + result[len("-") :]
+        result = "_" + result[len("-"):]
     result = result.lstrip(".")
     if not result:
         result = "_"
@@ -617,12 +617,14 @@ def read_csv_file(csv_file_path):
     with open(csv_file_path, "r", encoding="utf-8") as csv_file:
         return list(csv.reader(csv_file))
 
+
 def get_use_progress_bar():
     try:
         use_progress_bar = read_config_by_key("settings", "USE_PROGRESS_BAR")
         return use_progress_bar if use_progress_bar is not None else True
     except Exception:
         return True
+
 
 def get_current_version():
     current_version = read_config_by_key("settings", "CURRENT_VERSION")
@@ -689,22 +691,22 @@ def parse_streamer_from_csv_filename(csv_filename):
 
 def parse_streamer_from_m3u8_link(m3u8_link):
     indices = [i.start() for i in re.finditer("_", m3u8_link)]
-    streamer_name = m3u8_link[indices[0] + 1 : indices[-2]]
+    streamer_name = m3u8_link[indices[0] + 1: indices[-2]]
     return streamer_name
 
 
 def parse_video_id_from_m3u8_link(m3u8_link):
     indices = [i.start() for i in re.finditer("_", m3u8_link)]
     video_id = m3u8_link[
-        indices[0] + len(parse_streamer_from_m3u8_link(m3u8_link)) + 2 : indices[-1]
+        indices[0] + len(parse_streamer_from_m3u8_link(m3u8_link)) + 2: indices[-1]
     ]
     return video_id
 
 
 def parse_streamer_and_video_id_from_m3u8_link(m3u8_link):
     indices = [i.start() for i in re.finditer("_", m3u8_link)]
-    streamer_name = m3u8_link[indices[0] + 1 : indices[-2]]
-    video_id = m3u8_link[indices[0] + len(streamer_name) + 2 : indices[-1]]
+    streamer_name = m3u8_link[indices[0] + 1: indices[-2]]
+    video_id = m3u8_link[indices[0] + len(streamer_name) + 2: indices[-1]]
     return f" - {streamer_name} [{video_id}]"
 
 
@@ -812,9 +814,9 @@ def set_default_directory():
             if not file_path:
                 print("\nNo directory entered! Returning to main menu...")
                 return
-            
+
             file_path = os.path.expanduser(file_path)
-            
+
             try:
                 os.makedirs(file_path, exist_ok=True)
             except Exception as e:
@@ -1068,7 +1070,7 @@ def manual_vod_recover():
             break
         else:
             print("\n✖  No streamer name! Please try again:\n")
-        
+
     while True:
         video_id = input("Enter the Video ID (from: Twitchtracker/Streamscharts/Sullygnome): ")
         if video_id.strip():
@@ -1269,6 +1271,7 @@ def return_supported_qualities(m3u8_link):
     user_option = get_user_resolution_choice(m3u8_link, valid_resolutions, found_quality)
     return user_option
 
+
 def get_user_resolution_choice(m3u8_link, valid_resolutions, found_quality):
     try:
         choice = int(input("Choose a quality: "))
@@ -1344,7 +1347,7 @@ def handle_selenium(url):
                 if f"Waiting for {url.split('/')[2]} to respond..." in source:
                     raise Exception("Error: Waiting for website to respond...")
                 return source
-                
+
             except Exception:
                 try:
                     sb.activate_cdp_mode(url)
@@ -1721,17 +1724,17 @@ def parse_datetime_sullygnome(sullygnome_url):
 
 def unmute_vod(m3u8_link):
     video_filepath = get_vod_filepath(parse_streamer_from_m3u8_link(m3u8_link), parse_video_id_from_m3u8_link(m3u8_link))
-    
+
     write_m3u8_to_file(m3u8_link, video_filepath)
-    
+
     with open(video_filepath, "r+", encoding="utf-8") as video_file:
         file_contents = video_file.readlines()
         video_file.seek(0)
-        
+
         is_muted = is_video_muted(m3u8_link)
         base_link = m3u8_link.replace("index-dvr.m3u8", "")
         counter = 0
-        
+
         for segment in file_contents:
             if segment.startswith("#"):
                 video_file.write(segment)
@@ -1744,9 +1747,9 @@ def unmute_vod(m3u8_link):
                 else:
                     video_file.write(f"{base_link}{counter}.ts\n")
                 counter += 1
-        
+
         video_file.truncate()
-    
+
     if is_muted:
         print(f"{os.path.normpath(video_filepath)} has been unmuted!\n")
 
@@ -1754,7 +1757,7 @@ def unmute_vod(m3u8_link):
 def mark_invalid_segments_in_playlist(m3u8_link):
     print()
     unmute_vod(m3u8_link)
-    vod_file_path = get_vod_filepath(parse_streamer_from_m3u8_link(m3u8_link),parse_video_id_from_m3u8_link(m3u8_link))
+    vod_file_path = get_vod_filepath(parse_streamer_from_m3u8_link(m3u8_link), parse_video_id_from_m3u8_link(m3u8_link))
 
     with open(vod_file_path, "r", encoding="utf-8") as f:
         lines = f.read().splitlines()
@@ -1767,7 +1770,7 @@ def mark_invalid_segments_in_playlist(m3u8_link):
             print("No segments are valid. Cannot generate M3U8! Returning to main menu.")
         os.remove(vod_file_path)
         return
-    
+
     playlist_segments = [segment for segment in segments if segment in lines]
     modified_playlist = []
     for line in lines:
@@ -1804,7 +1807,7 @@ def check_if_unmuted_is_playable(m3u8_source):
         return False
     else:
         return True
-    
+
 
 def process_m3u8_configuration(m3u8_link, skip_check=False):
     playlist_segments = get_all_playlist_segments(m3u8_link)
@@ -1816,13 +1819,13 @@ def process_m3u8_configuration(m3u8_link, skip_check=False):
         print("Video contains muted segments")
         if read_config_by_key("settings", "UNMUTE_VIDEO"):
             unmute_vod(m3u8_link)
-            m3u8_source = get_vod_filepath(parse_streamer_from_m3u8_link(m3u8_link),parse_video_id_from_m3u8_link(m3u8_link),)
+            m3u8_source = get_vod_filepath(parse_streamer_from_m3u8_link(m3u8_link), parse_video_id_from_m3u8_link(m3u8_link),)
             is_playable = check_if_unmuted_is_playable(m3u8_source)
             if is_playable:
                 return m3u8_source
             else:
                 return m3u8_link
-        
+
     else:
         m3u8_source = m3u8_link
         os.remove(get_vod_filepath(parse_streamer_from_m3u8_link(m3u8_link), parse_video_id_from_m3u8_link(m3u8_link)))
@@ -1839,11 +1842,11 @@ def get_all_playlist_segments(m3u8_link):
     segment_list = []
     base_link = m3u8_link.replace("index-dvr.m3u8", "")
     counter = 0
-    
+
     with open(video_file_path, "r+", encoding="utf-8") as video_file:
         file_contents = video_file.readlines()
         video_file.seek(0)
-        
+
         for segment in file_contents:
             if segment.startswith("#"):
                 video_file.write(segment)
@@ -1852,11 +1855,11 @@ def get_all_playlist_segments(m3u8_link):
                     new_segment = f"{base_link}{counter}-muted.ts"
                 else:
                     new_segment = f"{base_link}{counter}.ts"
-                
+
                 video_file.write(f"{new_segment}\n")
                 segment_list.append(new_segment)
                 counter += 1
-        
+
         video_file.truncate()
     return segment_list
 
@@ -1865,50 +1868,50 @@ async def validate_playlist_segments(segments):
     valid_segments = []
     all_segments = [url.strip() for url in segments]
     available_segment_count = 0
-    
+
     batch_size = 200
-    
+
     connector = aiohttp.TCPConnector(
         limit=150,
         force_close=True,
         enable_cleanup_closed=True,
         ssl=False
     )
-    
+
     timeout = aiohttp.ClientTimeout(total=20, connect=5)
-    
+
     try:
         async with aiohttp.ClientSession(connector=connector, timeout=timeout) as session:
             for i in range(0, len(all_segments), batch_size):
                 batch = all_segments[i:i + batch_size]
                 tasks = []
-                
+
                 for url in batch:
                     task = asyncio.create_task(fetch_status(session, url, retries=1, timeout=15))
                     tasks.append(task)
-                
+
                 try:
                     results = await asyncio.gather(*tasks, return_exceptions=True)
                     for url in results:
                         if url and not isinstance(url, Exception):
                             available_segment_count += 1
                             valid_segments.append(url)
-                    
+
                     print(f"\rChecking segments {min(i + batch_size, len(all_segments))} / {len(all_segments)}", end="", flush=True)
-                
+
                 except Exception as e:
                     print(f"\nError processing batch: {str(e)}")
                     continue
-                
+
                 await asyncio.sleep(0.1)
-    
+
     except Exception as e:
         print(f"\nError during segment validation: {str(e)}")
-    
+
     finally:
         if not connector.closed:
             await connector.close()
-    
+
     print()
     if available_segment_count == len(all_segments):
         print("All Segments are Available\n")
@@ -1916,7 +1919,7 @@ async def validate_playlist_segments(segments):
         print("No Segments are Available\n")
     else:
         print(f"{available_segment_count} out of {len(all_segments)} Segments are Available. To recheck the segments select option 4 from the menu.\n")
-    
+
     return valid_segments
 
 
@@ -1946,7 +1949,7 @@ def vod_recover(streamer_name, video_id, timestamp, tracker_url=None):
             # Check if any alternate websites have a different timestamp
             for website in alternate_websites:
                 parsed_timestamp = None
-                if "streamscharts" in website:                                                                                                              
+                if "streamscharts" in website:
                     parsed_timestamp, _ = parse_datetime_streamscharts(website)
                 elif "twitchtracker" in website:
                     parsed_timestamp, _ = parse_datetime_twitchtracker(website)
@@ -1964,7 +1967,7 @@ def vod_recover(streamer_name, video_id, timestamp, tracker_url=None):
                     asyncio.set_event_loop(loop)
                     vod_url = loop.run_until_complete(get_vod_urls(streamer_name, video_id, parsed_timestamp))
                     loop.close()
-                    
+
                     if vod_url:
                         return vod_url
                 else:
@@ -1982,13 +1985,13 @@ def vod_recover(streamer_name, video_id, timestamp, tracker_url=None):
                     print("\033[91m \n✖  No datetime entered! \033[0m")
                     input("\nPress Enter to continue...")
                     run_vod_recover()
-                
+
                 # Get the VOD URLs using asyncio
                 loop = asyncio.new_event_loop()
                 asyncio.set_event_loop(loop)
                 vod_url = loop.run_until_complete(get_vod_urls(streamer_name, video_id, input_datetime))
                 loop.close()
-                
+
                 if vod_url:
                     return vod_url
 
@@ -2008,15 +2011,15 @@ def print_bulk_vod_options_menu(all_m3u8_links):
         print("\nFound M3U8 Links:")
         for idx, (video_id, link) in enumerate(all_m3u8_links, 1):
             print(f"{idx}. Video {video_id}: \033[92m{link}\033[0m")
-        
+
         print("\nOptions:")
         print("1. Download all VODs")
         print("2. Download specific VOD")
         print("3. Download or trim specific VOD")
         print("4. Return to main menu")
-        
+
         choice = input("\nSelect Option: ")
-        
+
         if choice in ["1", "2", "3", "4"]:
             return choice
         else:
@@ -2028,7 +2031,7 @@ def print_select_vod_menu(all_m3u8_links):
         print("\nSelect a VOD to download:")
         for idx, (video_id, link) in enumerate(all_m3u8_links, 1):
             print(f"{idx}. VOD {idx}: \033[92m{link}\033[0m")
-        
+
         try:
             vod_num = int(input("\nEnter the number of the VOD to download: "))
             if 1 <= vod_num <= len(all_m3u8_links):
@@ -2054,11 +2057,11 @@ def bulk_vod_recovery():
             all_m3u8_links.append((video_id, m3u8_link))
         else:
             print("No VODs found using the current domain list.")
-    
+
     if all_m3u8_links:
         while True:
             choice = print_bulk_vod_options_menu(all_m3u8_links)
-            
+
             if choice == "1":
                 for video_id, link in all_m3u8_links:
                     print(f"\nDownloading VOD {video_id}...")
@@ -2246,10 +2249,10 @@ def random_clip_recovery(video_id, hours, minutes):
                     url = next(url_iter)
                     batch_futures.append(executor.submit(check_url, url))
             except StopIteration:
-                pass 
+                pass
 
             if not batch_futures:
-                break 
+                break
 
             for future in as_completed(batch_futures):
                 result = future.result()
@@ -2259,7 +2262,7 @@ def random_clip_recovery(video_id, hours, minutes):
 
                     if counter % display_count == 0:
                         user_input = input("\nDo you want to search more URLs (Y/N): ").strip().upper()
-                        if user_input != "Y":                            
+                        if user_input != "Y":
                             should_continue = False
                             break
 
@@ -2304,18 +2307,18 @@ async def bulk_clip_recovery():
 
     connector = aiohttp.TCPConnector(limit=200, force_close=True, enable_cleanup_closed=True)
     timeout = aiohttp.ClientTimeout(total=15, connect=10)
-    
+
     max_retries = 3
     retry_count = 0
-    
+
     while retry_count < max_retries:
         try:
             async with aiohttp.ClientSession(connector=connector, timeout=timeout) as session:
                 for video_id, values in stream_info_dict.items():
                     vod_counter += 1
-                    print(f"\nProcessing Past Broadcast:\n" 
-                          f"Stream Date: {values[0].replace('-', ' ')}\n" 
-                          f"Vod ID: {video_id}\n" 
+                    print(f"\nProcessing Past Broadcast:\n"
+                          f"Stream Date: {values[0].replace('-', ' ')}\n"
+                          f"Vod ID: {video_id}\n"
                           f"Vod Number: {vod_counter} of {len(stream_info_dict)}\n")
                     original_vod_url_list = get_all_clip_urls(get_clip_format(video_id, values[1]), clip_format)
                     print("Searching...")
@@ -2329,7 +2332,7 @@ async def bulk_clip_recovery():
                                 tasks.append(validate_clip(session, url, streamer_name, video_id))
                             except Exception:
                                 continue
-                        
+
                         if not tasks:
                             continue
 
@@ -2363,7 +2366,7 @@ async def bulk_clip_recovery():
                     else:
                         print("No clips found!... Moving on to next vod." + "\n")
                     total_counter, valid_counter, iteration_counter = 0, 0, 0
-                return 
+                return
         except (aiohttp.ClientError, asyncio.TimeoutError, OSError) as e:
             retry_count += 1
             if retry_count >= max_retries:
@@ -2410,8 +2413,8 @@ def get_ffmpeg_path():
             if subprocess.run(["ffmpeg", "-version"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True).returncode == 0:
                 return "ffmpeg"
         except Exception:
-            pass 
-        
+            pass
+
         if os.path.exists(ffdl.ffmpeg_path):
             return ffdl.ffmpeg_path
 
@@ -2479,7 +2482,7 @@ def handle_progress_bar(command, output_filename, total_duration):
         with tqdm(total=100, position=0, desc=output_filename, leave=None, colour="green", unit="%", bar_format="{l_bar}{bar}| {percentage:.1f}/100% [{elapsed}]{postfix}") as pbar:
             for progress in ff.run_command_with_progress():
                 pbar.update(progress - pbar.n)
-                
+
                 if total_duration is not None:
                     total_duration_seconds = total_duration
                     current_duration_seconds = (progress / 100) * total_duration_seconds
@@ -2500,7 +2503,7 @@ def handle_file_already_exists(output_path):
             print("\n\033[94m\u2713 Skipping download!\033[0m\n")
             input("Press Enter to continue...")
             return run_vod_recover()
-        
+
 
 def handle_retry_command(command):
     try:
@@ -2523,10 +2526,10 @@ def download_m3u8_video_url(m3u8_link, output_filename):
 
     if downloader == "ffmpeg":
         command = [
-            get_ffmpeg_path(), 
-            "-i", m3u8_link, 
+            get_ffmpeg_path(),
+            "-i", m3u8_link,
             "-hide_banner",
-            "-c", "copy", 
+            "-c", "copy",
             "-f", get_ffmpeg_format(get_default_video_format()),
             "-y", output_path
         ]
@@ -2564,13 +2567,13 @@ def download_m3u8_video_url_slice(m3u8_link, output_filename, video_start_time, 
     downloader = get_default_downloader()
 
     if downloader == "ffmpeg":
-        
+
         command = [
             get_ffmpeg_path(),
             "-protocol_whitelist", "file,http,https,tcp,tls",
             "-hide_banner",
             "-ss", video_start_time,
-            "-to", video_end_time, 
+            "-to", video_end_time,
             "-i", m3u8_link,
             "-c", "copy",
             "-f", get_ffmpeg_format(get_default_video_format()),
@@ -2601,13 +2604,12 @@ def download_m3u8_video_url_slice(m3u8_link, output_filename, video_start_time, 
         handle_retry_command(command)
 
 
-def download_m3u8_video_file(m3u8_file_path, output_filename):    
+def download_m3u8_video_file(m3u8_file_path, output_filename):
     output_path = os.path.normpath(os.path.join(get_default_directory(), output_filename))
     handle_file_already_exists(output_path)
 
     downloader = get_default_downloader()
 
-    
     if downloader == "ffmpeg":
         command = [
             get_ffmpeg_path(),
@@ -2667,7 +2669,7 @@ def download_m3u8_video_file_slice(m3u8_file_path, output_filename, video_start_
         "-hide_banner",
         "-ignore_unknown",
         "-ss", video_start_time,
-        "-to", video_end_time, 
+        "-to", video_end_time,
         "-i", m3u8_file_path,
         "-c", "copy",
         "-f", get_ffmpeg_format(get_default_video_format()),
@@ -2695,11 +2697,11 @@ def get_VLC_Location():
 
         possible_locations = (
             [f"{chr(i)}:/Program Files/VideoLAN/VLC/vlc.exe" for i in range(65, 91)] + [
-             f"{chr(i)}:/Program Files (x86)/VideoLAN/VLC/vlc.exe" for i in range(65, 91)]
+                f"{chr(i)}:/Program Files (x86)/VideoLAN/VLC/vlc.exe" for i in range(65, 91)]
             + [
                 "/Applications/VLC.app/Contents/MacOS/VLC",  # macOS default
                 # Linux locations
-                "/usr/bin/vlc",  
+                "/usr/bin/vlc",
                 "/usr/local/bin/vlc",
                 # Extra locations of other players
                 "C:/Program Files/MPC-HC/mpc-hc64.exe",
@@ -3066,6 +3068,7 @@ def fetch_twitch_data(vod_id, retries=3, delay=5):
 
     return None
 
+
 def get_vod_or_highlight_url(vod_id):
     url = f"https://usher.ttvnw.net/vod/{vod_id}.m3u8"
     response = requests.get(url, timeout=30)
@@ -3143,7 +3146,7 @@ def get_twitch_clip(clip_slug, retries=3):
         }
     ]
     headers = {"Client-Id": "kimne78kx3ncx6brgo4mv6wki5h1ko"}
-    
+
     for attempt in range(retries):
         try:
             response_endpoint = requests.post(url_endpoint, json=data, headers=headers, timeout=30)
@@ -3164,7 +3167,7 @@ def get_twitch_clip(clip_slug, retries=3):
         except (requests.exceptions.RequestException, ValueError):
             print(f"\nRetrying...")
             if attempt < retries - 1:
-                sleep(3) 
+                sleep(3)
 
     print("\n✖  Unable to get clip! Check the URL and try again.\n")
     input("Press Enter to continue...")
@@ -3198,7 +3201,7 @@ def handle_twitch_clip(clip_url):
 
 def run_vod_recover():
     print("\nWELCOME TO VOD RECOVERY!")
-    
+
     menu = 0
     while menu < 50:
         print()
@@ -3319,15 +3322,9 @@ def run_vod_recover():
             run_vod_recover()
 
 
-
 if __name__ == "__main__":
     try:
         run_vod_recover()
     except KeyboardInterrupt:
         print("\n\nExiting...")
         os._exit(0)
-
-
-
-
-
